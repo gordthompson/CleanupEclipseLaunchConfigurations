@@ -29,8 +29,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /**
- * Remove obsolete "Launch configuration" entries in Eclipse that
- * clog up the list when doing an Export to a Runnable JAR file.
+ * Remove obsolete "Launch configuration" entries in Eclipse that clog up the
+ * list when doing an Export to a Runnable JAR file.
  * 
  * ref: http://stackoverflow.com/a/21687507/2144390
  * 
@@ -42,15 +42,15 @@ import org.xml.sax.SAXException;
 public class CleanupEclipseLaunchConfigurationsMain {
 
 	public static void main(String[] args) {
-		// edit the following to suit (or hack the code to use "args" 
+		// edit the following to suit (or hack the code to use "args"
 		// so you can run it from the command line for multiple locations)
-		String workspaceRoot = "C:/Users/Gord/workspace";  // no trailing slash
-		
+		String workspaceRoot = "C:/Users/Gord/workspace"; // no trailing slash
+
 		String subfolderPath = ".metadata/.plugins/org.eclipse.debug.core/.launches/";
 		String launchesPath = workspaceRoot + "/" + subfolderPath;
 
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-	    DocumentBuilder dBuilder = null;
+		DocumentBuilder dBuilder = null;
 		try {
 			dBuilder = dbFactory.newDocumentBuilder();
 		} catch (ParserConfigurationException e) {
@@ -62,30 +62,30 @@ public class CleanupEclipseLaunchConfigurationsMain {
 		for (File launchFile : new File(launchesPath).listFiles()) {
 			if (launchFile.getName().endsWith(".launch")) {
 				fileCount++;
-			    Document doc = null;
+				Document doc = null;
 				try {
 					doc = dBuilder.parse(launchFile);
 				} catch (SAXException | IOException e) {
 					e.printStackTrace(System.err);
 					System.exit(2);
 				}
-			    doc.getDocumentElement().normalize();
-			    NodeList laList = doc.getElementsByTagName("listAttribute");
-			    for (int i = 0; i < laList.getLength(); i++) {
-			        Element laElement = (Element) laList.item(i);
-			        if (laElement.getAttribute("key").equals("org.eclipse.debug.core.MAPPED_RESOURCE_PATHS")) {
-			        	NodeList leList = laElement.getElementsByTagName("listEntry");
-					    for (int j = 0; j < leList.getLength(); j++) {
-					    	Element leElement = (Element) leList.item(j);
-					    	File javaFile = new File(workspaceRoot + leElement.getAttribute("value"));
-					    	if (!javaFile.exists()) {
-					    		System.out.printf("Deleting \"%s\"%n", launchFile.getName());
-					    		launchFile.delete();
-					    		deleteCount++;
-					    	}
-					    }
-			        }
-			    }
+				doc.getDocumentElement().normalize();
+				NodeList laList = doc.getElementsByTagName("listAttribute");
+				for (int i = 0; i < laList.getLength(); i++) {
+					Element laElement = (Element) laList.item(i);
+					if (laElement.getAttribute("key").equals("org.eclipse.debug.core.MAPPED_RESOURCE_PATHS")) {
+						NodeList leList = laElement.getElementsByTagName("listEntry");
+						for (int j = 0; j < leList.getLength(); j++) {
+							Element leElement = (Element) leList.item(j);
+							File javaFile = new File(workspaceRoot + leElement.getAttribute("value"));
+							if (!javaFile.exists()) {
+								System.out.printf("Deleting \"%s\"%n", launchFile.getName());
+								launchFile.delete();
+								deleteCount++;
+							}
+						}
+					}
+				}
 			}
 		}
 		System.out.printf("%d .launch file(s) processed, %d deleted.%n", fileCount, deleteCount);
