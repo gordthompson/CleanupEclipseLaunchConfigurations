@@ -1,0 +1,3 @@
+version 1.0.1 - 2016-11-21
+
+- add code to correctly handle projects stored outside of the "workspace" folder

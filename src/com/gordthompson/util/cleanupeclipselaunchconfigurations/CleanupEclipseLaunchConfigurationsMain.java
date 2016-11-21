@@ -18,6 +18,8 @@ package com.gordthompson.util.cleanupeclipselaunchconfigurations;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,7 +36,7 @@ import org.xml.sax.SAXException;
  * 
  * ref: http://stackoverflow.com/a/21687507/2144390
  * 
- * @version 1.0.0
+ * @version 1.0.1
  * @author Gord Thompson
  *
  */
@@ -44,10 +46,9 @@ public class CleanupEclipseLaunchConfigurationsMain {
 	public static void main(String[] args) {
 		// edit the following to suit (or hack the code to use "args"
 		// so you can run it from the command line for multiple locations)
-		String workspaceRoot = "C:/Users/Gord/workspace"; // no trailing slash
+		String workspaceRoot = "/home/gord/workspace/"; // note trailing slash
 
-		String subfolderPath = ".metadata/.plugins/org.eclipse.debug.core/.launches/";
-		String launchesPath = workspaceRoot + "/" + subfolderPath;
+		String launchesPath = workspaceRoot + ".metadata/.plugins/org.eclipse.debug.core/.launches/";
 
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder dBuilder = null;
@@ -70,6 +71,29 @@ public class CleanupEclipseLaunchConfigurationsMain {
 					System.exit(2);
 				}
 				doc.getDocumentElement().normalize();
+				
+				String projectName = "";
+				NodeList saList  = doc.getElementsByTagName("stringAttribute");
+				for (int i = 0; i < saList.getLength(); i++) {
+					Element saElement = (Element) saList.item(i);
+					if (saElement.getAttribute("key").equals("org.eclipse.jdt.launching.PROJECT_ATTR")) {
+						projectName = saElement.getAttribute("value");
+						break;
+					}
+				}
+				String locationFilePath = workspaceRoot + ".metadata/.plugins/org.eclipse.core.resources/.projects/" + projectName + "/.location";
+				String projectRoot = "";
+				if (new File(locationFilePath).exists()) {
+					try {
+						projectRoot = extractProjectRoot(locationFilePath);
+					} catch (IOException e) {
+						e.printStackTrace(System.err);
+						System.exit(3);
+					}
+				} else {
+					projectRoot = workspaceRoot + projectName + "/";
+				}
+				
 				NodeList laList = doc.getElementsByTagName("listAttribute");
 				for (int i = 0; i < laList.getLength(); i++) {
 					Element laElement = (Element) laList.item(i);
@@ -77,11 +101,13 @@ public class CleanupEclipseLaunchConfigurationsMain {
 						NodeList leList = laElement.getElementsByTagName("listEntry");
 						for (int j = 0; j < leList.getLength(); j++) {
 							Element leElement = (Element) leList.item(j);
-							File javaFile = new File(workspaceRoot + leElement.getAttribute("value"));
+							// trim "/projectname/" from beginning of value
+							File javaFile = new File(projectRoot + leElement.getAttribute("value").substring(projectName.length() + 2));
 							if (!javaFile.exists()) {
 								System.out.printf("Deleting \"%s\"%n", launchFile.getName());
 								launchFile.delete();
 								deleteCount++;
+								break;
 							}
 						}
 					}
@@ -90,6 +116,15 @@ public class CleanupEclipseLaunchConfigurationsMain {
 		}
 		System.out.printf("%d .launch file(s) processed, %d deleted.%n", fileCount, deleteCount);
 		System.out.println("Remember to restart Eclipse if it is currently open.");
+	}
+	
+	private static String extractProjectRoot(String locationFileSpec) throws IOException {
+		byte[] locationBytes = Files.readAllBytes(new File(locationFileSpec).toPath());
+		String locationString = new String(locationBytes, "ISO-8859-1");
+		String marker = "URI//file:";
+		int startOffset = locationString.indexOf(marker) + marker.length();
+		int endOffset = locationString.indexOf(0, startOffset);
+		return new String(Arrays.copyOfRange(locationBytes, startOffset, endOffset), "UTF-8") + "/";
 	}
 
 }
