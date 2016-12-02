@@ -1,3 +1,8 @@
 version 1.0.1 - 2016-11-21
 
 - add code to correctly handle projects stored outside of the "workspace" folder
+
+
+version 1.0.2 - 2016-12-02
+
+- check for .java file extension to avoid messing with "non-standard" launch configurations (e.g., for jUnit)

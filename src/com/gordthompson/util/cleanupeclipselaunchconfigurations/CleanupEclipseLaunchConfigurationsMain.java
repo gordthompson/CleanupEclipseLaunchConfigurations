@@ -36,7 +36,7 @@ import org.xml.sax.SAXException;
  * 
  * ref: http://stackoverflow.com/a/21687507/2144390
  * 
- * @version 1.0.1
+ * @version 1.0.2
  * @author Gord Thompson
  *
  */
@@ -46,7 +46,7 @@ public class CleanupEclipseLaunchConfigurationsMain {
 	public static void main(String[] args) {
 		// edit the following to suit (or hack the code to use "args"
 		// so you can run it from the command line for multiple locations)
-		String workspaceRoot = "/home/gord/workspace/"; // note trailing slash
+		String workspaceRoot = "C:/Users/Gord/workspace/"; // note trailing slash
 
 		String launchesPath = workspaceRoot + ".metadata/.plugins/org.eclipse.debug.core/.launches/";
 
@@ -101,13 +101,16 @@ public class CleanupEclipseLaunchConfigurationsMain {
 						NodeList leList = laElement.getElementsByTagName("listEntry");
 						for (int j = 0; j < leList.getLength(); j++) {
 							Element leElement = (Element) leList.item(j);
-							// trim "/projectname/" from beginning of value
-							File javaFile = new File(projectRoot + leElement.getAttribute("value").substring(projectName.length() + 2));
-							if (!javaFile.exists()) {
-								System.out.printf("Deleting \"%s\"%n", launchFile.getName());
-								launchFile.delete();
-								deleteCount++;
-								break;
+							String javaSourcePath = leElement.getAttribute("value");
+							if (javaSourcePath.endsWith(".java")) {
+								// trim "/projectname/" from beginning of javaSourcePath
+								File javaFile = new File(projectRoot + javaSourcePath.substring(projectName.length() + 2));
+								if (!javaFile.exists()) {
+									System.out.printf("Deleting \"%s\"%n", launchFile.getName());
+									launchFile.delete();
+									deleteCount++;
+									break;
+								}
 							}
 						}
 					}
